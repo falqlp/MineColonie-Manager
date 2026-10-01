@@ -1,12 +1,12 @@
 package dev.leopaul.colonyledger.client.gui;
 
 import dev.leopaul.colonyledger.model.ColonyResourceSummary;
-import dev.leopaul.colonyledger.model.ResourceRequirement;
 import dev.leopaul.colonyledger.network.RequestLedgerPayload;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -21,11 +21,16 @@ public final class LedgerScreen extends Screen {
     private static final int PANEL_WIDTH = 380;
     private static final int PANEL_HEIGHT = 300;
 
-    private enum View { ALL, MISSING, BY_SITE }
+    private enum View { BUILDERS, SUPPLY }
+
+    private record DisplayRow(String itemId, String displayName, int missing, int pending,
+            Component details, String sources) {}
 
     private ColonyResourceSummary summary;
-    private View view = View.MISSING;
+    private View view = View.BUILDERS;
     private EditBox search;
+    private Button buildersTab;
+    private Button supplyTab;
     private Button previousPage;
     private Button nextPage;
     private int scroll;
@@ -45,13 +50,14 @@ public final class LedgerScreen extends Screen {
     protected void init() {
         int left = panelLeft();
         int top = panelTop();
-        int buttonWidth = (panelWidth() - 32) / 3;
-        addRenderableWidget(plainButton(left + 10, top + 57, buttonWidth,
-                Component.translatable("screen.colonyresourceledger.all"), b -> switchView(View.ALL)));
-        addRenderableWidget(plainButton(left + 16 + buttonWidth, top + 57, buttonWidth,
-                Component.translatable("screen.colonyresourceledger.missing"), b -> switchView(View.MISSING)));
-        addRenderableWidget(plainButton(left + 22 + buttonWidth * 2, top + 57, buttonWidth,
-                Component.translatable("screen.colonyresourceledger.by_site"), b -> switchView(View.BY_SITE)));
+        int buttonWidth = (panelWidth() - 26) / 2;
+        buildersTab = addRenderableWidget(plainButton(left + 10, top + 57, buttonWidth,
+                Component.translatable("screen.colonyresourceledger.builders"), b -> switchView(View.BUILDERS)));
+        supplyTab = addRenderableWidget(plainButton(left + 16 + buttonWidth, top + 57, buttonWidth,
+                Component.translatable("screen.colonyresourceledger.supply"), b -> switchView(View.SUPPLY)));
+        supplyTab.setTooltip(Tooltip.create(Component.translatable("screen.colonyresourceledger.supply_help")));
+        buildersTab.active = view != View.BUILDERS;
+        supplyTab.active = view != View.SUPPLY;
         String query = search == null ? "" : search.getValue();
         search = addRenderableWidget(new EditBox(font, left + 10, top + 84, panelWidth() - 20, 20,
                 Component.translatable("screen.colonyresourceledger.search")));
@@ -84,9 +90,14 @@ public final class LedgerScreen extends Screen {
     private int panelTop() { return (height - panelHeight()) / 2; }
     private int listTop() { return panelTop() + 109; }
     private int listBottom() { return panelTop() + panelHeight() - 30; }
-    private int rowHeight() { return view == View.BY_SITE ? 47 : 36; }
+    private int rowHeight() { return view == View.SUPPLY ? 47 : 36; }
     private int rowCapacity() { return Math.max(1, (listBottom() - listTop()) / rowHeight()); }
-    private void switchView(View next) { view = next; scroll = 0; }
+    private void switchView(View next) {
+        view = next;
+        scroll = 0;
+        buildersTab.active = view != View.BUILDERS;
+        supplyTab.active = view != View.SUPPLY;
+    }
 
     private void scrollBy(int amount) {
         int maxScroll = Math.max(0, visibleRows().size() - rowCapacity());
@@ -112,12 +123,24 @@ public final class LedgerScreen extends Screen {
         }
     }
 
-    private List<ResourceRequirement> visibleRows() {
+    private List<DisplayRow> visibleRows() {
         String query = search == null ? "" : search.getValue().toLowerCase(Locale.ROOT);
-        return summary.resources().stream()
-                .filter(r -> view != View.MISSING || r.missing() > 0)
+        List<DisplayRow> rows;
+        if (view == View.SUPPLY) {
+            rows = summary.supplyRequirements().stream().map(r -> new DisplayRow(r.itemId(), r.displayName(),
+                    r.missing(), 0, Component.translatable("screen.colonyresourceledger.supply_row",
+                    r.requiredTotal(), r.allocatedStock()), String.join(", ", r.usedBy()))).toList();
+        } else {
+            rows = summary.resources().stream().map(r -> new DisplayRow(r.itemId(), r.displayName(),
+                    r.missing(), r.inTransit(), Component.translatable("screen.colonyresourceledger.row",
+                    r.requiredTotal(), r.builderInventory(), r.colonyAvailable(), r.inTransit()),
+                    r.requestSources().stream().map(s -> s.buildingName() + " / " + s.builderName()).distinct()
+                            .reduce((a, b) -> a + ", " + b).orElse(""))).toList();
+        }
+        return rows.stream()
                 .filter(r -> query.isBlank() || r.displayName().toLowerCase(Locale.ROOT).contains(query)
-                        || r.itemId().toLowerCase(Locale.ROOT).contains(query))
+                        || r.itemId().toLowerCase(Locale.ROOT).contains(query)
+                        || r.sources().toLowerCase(Locale.ROOT).contains(query))
                 .toList();
     }
 
@@ -146,10 +169,15 @@ public final class LedgerScreen extends Screen {
 
         drawCenteredText(graphics, title, top + 12, 0xFF202020);
         drawCenteredText(graphics, Component.literal(summary.colonyName()), top + 27, 0xFF6B4B13);
-        drawCenteredText(graphics, Component.translatable("screen.colonyresourceledger.stats",
-                summary.activeBuilderCount(), summary.activeConstructionCount()), top + 39, 0xFF555555);
+        Component subtitle = view == View.SUPPLY
+                ? Component.translatable(summary.supplyPlanLimited()
+                        ? "screen.colonyresourceledger.supply_limited" : "screen.colonyresourceledger.supply_forecast")
+                : Component.translatable("screen.colonyresourceledger.stats",
+                        summary.activeBuilderCount(), summary.activeConstructionCount());
+        drawCenteredText(graphics, subtitle, top + 39,
+                view == View.SUPPLY && summary.supplyPlanLimited() ? 0xFF9A6800 : 0xFF555555);
 
-        List<ResourceRequirement> rows = visibleRows();
+        List<DisplayRow> rows = visibleRows();
         int capacity = rowCapacity();
         int maxScroll = Math.max(0, rows.size() - capacity);
         scroll = Math.clamp(scroll, 0, maxScroll);
@@ -160,11 +188,12 @@ public final class LedgerScreen extends Screen {
         int y = listTop();
         int rowHeight = rowHeight();
         int rowRight = right - 20;
+        DisplayRow hovered = null;
         graphics.enableScissor(left + 10, listTop(), rowRight, listBottom());
 
         for (int i = scroll; i < Math.min(rows.size(), scroll + capacity); i++) {
-            ResourceRequirement row = rows.get(i);
-            int color = row.missing() > 0 ? 0xFF9C2020 : row.inTransit() > 0 ? 0xFF9A6800 : 0xFF207A42;
+            DisplayRow row = rows.get(i);
+            int color = row.missing() > 0 ? 0xFF9C2020 : row.pending() > 0 ? 0xFF9A6800 : 0xFF207A42;
             graphics.fill(left + 10, y, rowRight, y + rowHeight - 2, 0xFFF0F0F0);
             graphics.renderOutline(left + 10, y, panelWidth() - 30, rowHeight - 2, 0xFFD0D0D0);
             graphics.renderItem(itemPreview(row), left + 15, y + 9);
@@ -173,19 +202,22 @@ public final class LedgerScreen extends Screen {
             graphics.drawString(font, fitText(font, row.displayName(), provideX - left - 44),
                     left + 38, y + 6, 0xFF202020, false);
             graphics.drawString(font, provide, provideX, y + 6, color, false);
-            graphics.drawString(font, Component.translatable("screen.colonyresourceledger.row",
-                    row.requiredTotal(), row.builderInventory(), row.colonyAvailable(), row.inTransit()),
+            graphics.drawString(font, fitText(font, row.details().getString(), rowRight - left - 44),
                     left + 38, y + 19, 0xFF555555, false);
-            if (view == View.BY_SITE && !row.requestSources().isEmpty()) {
-                String sites = row.requestSources().stream().map(s -> s.buildingName() + " / " + s.builderName())
-                        .distinct().reduce((a, b) -> a + ", " + b).orElse("");
-                graphics.drawString(font, sites, left + 38, y + 32, 0xFF777777, false);
+            if (view == View.SUPPLY && !row.sources().isEmpty()) {
+                graphics.drawString(font, fitText(font, row.sources(), rowRight - left - 44),
+                        left + 38, y + 32, 0xFF777777, false);
+            }
+            if (mouseX >= left + 10 && mouseX < rowRight && mouseY >= y
+                    && mouseY < Math.min(y + rowHeight - 2, listBottom())) {
+                hovered = row;
             }
             y += rowHeight;
         }
         graphics.disableScissor();
         if (rows.isEmpty()) {
-            drawCenteredText(graphics, Component.translatable("screen.colonyresourceledger.empty"),
+            drawCenteredText(graphics, Component.translatable(view == View.SUPPLY
+                            ? "screen.colonyresourceledger.supply_empty" : "screen.colonyresourceledger.empty"),
                     listTop() + 10, 0xFF555555);
         }
         if (maxScroll > 0) {
@@ -198,9 +230,15 @@ public final class LedgerScreen extends Screen {
         String range = rows.isEmpty() ? "0 / 0"
                 : (scroll + 1) + " - " + Math.min(rows.size(), scroll + capacity) + " / " + rows.size();
         graphics.drawString(font, range, left + 10, bottom - 20, 0xFF555555, false);
+        if (hovered != null) {
+            Component tooltip = Component.literal(hovered.displayName()).append("\n").append(hovered.details())
+                    .append("\n").append(Component.translatable("screen.colonyresourceledger.provide", hovered.missing()))
+                    .append("\n").append(hovered.sources());
+            graphics.renderTooltip(font, font.split(tooltip, Math.min(300, width - 24)), mouseX, mouseY);
+        }
     }
 
-    private ItemStack itemPreview(ResourceRequirement row) {
+    private ItemStack itemPreview(DisplayRow row) {
         try {
             return new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(row.itemId())));
         } catch (IllegalArgumentException ignored) {

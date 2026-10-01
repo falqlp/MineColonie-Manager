@@ -10,7 +10,7 @@ public final class LedgerNetwork {
     private LedgerNetwork() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1");
+        var registrar = event.registrar("2");
         registrar.playToServer(RequestLedgerPayload.TYPE, RequestLedgerPayload.STREAM_CODEC, (payload, context) ->
                 context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer player) {

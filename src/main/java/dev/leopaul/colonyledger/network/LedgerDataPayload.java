@@ -27,6 +27,8 @@ public record LedgerDataPayload(ColonyResourceSummary summary) implements Custom
         buf.writeVarInt(summary.activeConstructionCount());
         buf.writeLong(summary.generatedAt());
         buf.writeCollection(summary.resources(), LedgerDataPayload::writeResource);
+        buf.writeCollection(summary.supplyRequirements(), LedgerDataPayload::writeSupply);
+        buf.writeBoolean(summary.supplyPlanLimited());
     }
 
     private static ColonyResourceSummary readSummary(RegistryFriendlyByteBuf buf) {
@@ -36,7 +38,23 @@ public record LedgerDataPayload(ColonyResourceSummary summary) implements Custom
         int constructions = buf.readVarInt();
         long generatedAt = buf.readLong();
         List<ResourceRequirement> rows = buf.readList(LedgerDataPayload::readResource);
-        return new ColonyResourceSummary(colonyId, name, builders, constructions, generatedAt, rows);
+        List<SupplyRequirement> supplies = buf.readList(LedgerDataPayload::readSupply);
+        boolean limited = buf.readBoolean();
+        return new ColonyResourceSummary(colonyId, name, builders, constructions, generatedAt, rows, supplies, limited);
+    }
+
+    private static void writeSupply(FriendlyByteBuf buf, SupplyRequirement row) {
+        buf.writeUtf(row.itemId());
+        buf.writeUtf(row.displayName());
+        buf.writeVarInt(row.requiredTotal());
+        buf.writeVarInt(row.allocatedStock());
+        buf.writeVarInt(row.missing());
+        buf.writeCollection(row.usedBy(), (buffer, source) -> buffer.writeUtf(source));
+    }
+
+    private static SupplyRequirement readSupply(FriendlyByteBuf buf) {
+        return new SupplyRequirement(buf.readUtf(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(),
+                buf.readVarInt(), buf.readList(buffer -> buffer.readUtf()));
     }
 
     private static void writeResource(FriendlyByteBuf buf, ResourceRequirement row) {
