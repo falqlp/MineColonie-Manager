@@ -1,0 +1,13 @@
+{
+  "item.colonyresourceledger.colony_resource_ledger": "Colony Resource Ledger",
+  "itemGroup.colonyresourceledger": "Colony Resource Ledger",
+  "screen.colonyresourceledger.title": "COLONY RESOURCE OVERVIEW",
+  "screen.colonyresourceledger.all": "All",
+  "screen.colonyresourceledger.missing": "To provide",
+  "screen.colonyresourceledger.by_site": "By builder",
+  "screen.colonyresourceledger.search": "Search...",
+  "screen.colonyresourceledger.stats": "%s active builders · %s active sites",
+  "screen.colonyresourceledger.row": "Need %s · builders %s · stock %s · transit %s",
+  "screen.colonyresourceledger.provide": "Provide: %s",
+  "screen.colonyresourceledger.empty": "Nothing to display"
+}

@@ -1,0 +1,13 @@
+{
+  "item.colonyresourceledger.colony_resource_ledger": "Registre des ressources de la colonie",
+  "itemGroup.colonyresourceledger": "Registre des ressources",
+  "screen.colonyresourceledger.title": "RESSOURCES DE LA COLONIE",
+  "screen.colonyresourceledger.all": "Toutes",
+  "screen.colonyresourceledger.missing": "À fournir",
+  "screen.colonyresourceledger.by_site": "Par builder",
+  "screen.colonyresourceledger.search": "Rechercher...",
+  "screen.colonyresourceledger.stats": "%s builders actifs · %s chantiers actifs",
+  "screen.colonyresourceledger.row": "Besoin %s · builders %s · stock %s · transit %s",
+  "screen.colonyresourceledger.provide": "À fournir : %s",
+  "screen.colonyresourceledger.empty": "Aucune ressource à afficher"
+}
