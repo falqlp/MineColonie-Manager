@@ -164,6 +164,10 @@ Le groupe de sources `test` reçoit explicitement les dépendances Minecraft,
 NeoForge et leurs bibliothèques via `neoForge.addModdingDependenciesTo(sourceSets.test)`.
 Elles sont nécessaires à la compilation **et** à l'exécution des tests de codecs
 et NBT ; les tests ne sont pas inclus dans le JAR du mod.
+Ces suites sont des programmes Java `main`, pas des tests JUnit. La tâche `test`
+exécute les six tâches `verify…` et autorise l'absence de tests JUnit découverts
+(`failOnNoDiscoveredTests = false`, nécessaire avec Gradle 9). Les erreurs des
+vérifications font toujours échouer `test`, `check` et `build`.
 Pour les lancer seuls :
 
 ```powershell

@@ -87,6 +87,15 @@ tasks.register('verifyHousingPayload', JavaExec) {
 }
 tasks.named('check') { dependsOn tasks.named('verifyHousingServices'), tasks.named('verifyHousingPayload') }
 
+tasks.named('test', Test) {
+    // These regression suites are Java main programs executed by verify* tasks,
+    // not JUnit tests. Gradle 9 otherwise fails after finding no JUnit methods.
+    failOnNoDiscoveredTests = false
+    // Keep `test`, `check` and `build` running all real checks; failures still fail the build.
+    dependsOn 'verifySupplyPlanner', 'verifyLedgerPayload', 'verifyJobHistory',
+            'verifyJobPayload', 'verifyHousingServices', 'verifyHousingPayload'
+}
+
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
