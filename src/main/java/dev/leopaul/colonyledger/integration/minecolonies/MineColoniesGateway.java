@@ -170,7 +170,7 @@ public final class MineColoniesGateway {
         return (int) Math.min(Integer.MAX_VALUE, count);
     }
 
-    private static IColony findAccessibleColony(ServerPlayer player, int requestedId) {
+    static IColony findAccessibleColony(ServerPlayer player, int requestedId) {
         return IMinecoloniesAPI.getInstance().getColonyManager().getColonies(player.level()).stream()
                 .filter(c -> requestedId < 0 || c.getID() == requestedId)
                 .filter(c -> c.getPermissions().isColonyMember(player))

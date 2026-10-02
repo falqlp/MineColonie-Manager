@@ -69,6 +69,66 @@ recettes apprises ne sont pas inventées. Aucune demande ni fabrication n'est la
 Les cycles et chaînes trop longues sont interrompus, avec un avertissement
 « Prévision partielle » et le besoin restant affiché comme bloc à fournir.
 
+## Suivi des colons
+
+Le nouvel objet **Suivi des colons** se fabrique avec **1 livre + 1 montre**, sans
+ordre imposé. Un clic droit ouvre le panneau de la colonie accessible la plus proche.
+Pour tester en créatif : `/give @s colonyresourceledger:colony_job_monitor`.
+
+Chaque ligne affiche le métier actuel, le JobStatus actuel, et le pourcentage de
+temps observé dans `IDLE` (inactif), `WORKING` (travaille) et `STUCK` (bloqué).
+Une barre colorée représente les mêmes pourcentages. Recherche par nom ou métier,
+défilement et boutons de pagination permettent de consulter toute la colonie.
+Le résumé en haut est pondéré par les durées observées des colons actuels.
+
+Périodes glissantes : **1, 3, 7 et 30 jours Minecraft**, ou **Total depuis le début
+du suivi**. Un jour vaut 24 000 ticks. Le compteur utilise `gameTime`, pas `dayTime` :
+dormir pour sauter la nuit ou utiliser `/time` n'ajoute pas de durée artificielle.
+Les pauses du serveur et le temps où le monde est fermé ne sont pas comptés.
+Les périodes longues ne reconstituent pas des données antérieures à l'installation.
+
+Un échantillon est pris toutes les 20 ticks, côté serveur, lorsque la colonie est
+active et que l'entité du colon est chargée. Seuls deux échantillons consécutifs
+permettent de compter l'intervalle entre eux. Les trous de chargement et les
+redémarrages ne sont donc pas extrapolés. Les pourcentages sont normalisés sur le
+temps **réellement observé**, pas sur toute la durée sélectionnée. Une info-bulle
+indique ce temps, en jours Minecraft ; sans observation les pourcentages sont « — ».
+Les pourcentages arrondis à une décimale totalisent 100,0 %.
+
+L'historique suit le colon même s'il change de métier. JobStatus est l'état natif
+MineColonies, pas une mesure de rendement : un colon qui dort peut conserver son
+dernier JobStatus, et `STUCK` ne révèle pas la cause du blocage. Des transitions
+plus rapides que 20 ticks peuvent être manquées.
+
+Le suivi fonctionne même si le panneau est fermé. Il est sauvegardé par dimension
+dans `data/colonyresourceledger_job_history.dat`, avec des identités séparées par
+colonie et colon. L'historique glissant est borné à 30 jours (36 000 octets par colon,
+plus les compteurs cumulés conservés pour « Total »). Le panneau affiche les colons
+actuellement présents, pas les colons décédés ou supprimés. Le client reçoit
+uniquement le résumé de la période demandée, jamais l'historique brut.
+
+## Gestion des logements (MVP)
+
+Objet **Gestion des logements** : craft sans ordre **1 livre + 1 boussole + 1 papier**.
+En créatif : `/give @s colonyresourceledger:colony_housing_manager`, puis clic droit.
+
+Trois vues : citoyens (métier, domicile, travail, distance, niveau et plafond de
+compétences), résidences (occupation et occupants), échanges proposés (avant/après
+et gain). Recherche, tri et filtre de statut ; cliquer une résidence filtre ses
+occupants. Survoler les lignes pour les détails complets. Un échange nécessite une
+sélection puis **Confirmer l'échange** ; aucune réaffectation automatique.
+
+Distances horizontales X/Z en blocs, pas des trajets réels. Lecture réservée aux
+membres avec `ACCESS_HUTS`, échanges à `MANAGE_HUTS`. Le serveur revalide chaque
+confirmation. Les gardes à logement obligatoire, enfants et logements spéciaux
+ne sont pas déplacés ; les capacités et plafonds de progression sont conservés.
+Le MVP ne regroupe pas les familles et ne fait pas d'optimisation globale.
+
+Seuils et mode suggestion uniquement configurables dans
+`<monde>/serverconfig/colonyresourceledger-server.toml` (`[housing]`).
+L'API exacte inspectée, les dépendances internes, règles, limites et scénarios
+de test sont documentés dans [docs/housing-api.md](docs/housing-api.md).
+
 ## API MineColonies vérifiée
 
 L'intégration est isolée dans
@@ -99,14 +159,14 @@ $env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.1.12-hotspot'
 
 L'artefact est généré dans `build/libs/`.
 
-`build` exécute aussi les tests du plan d'approvisionnement et du paquet réseau.
+`build` exécute aussi les tests du plan d'approvisionnement, des historiques et des paquets réseau.
 Pour les lancer seuls :
 
 ```powershell
-.\gradlew.bat verifySupplyPlanner verifyLedgerPayload
+.\gradlew.bat verifySupplyPlanner verifyLedgerPayload verifyJobHistory verifyJobPayload verifyHousingServices verifyHousingPayload
 ```
 
-Le protocole réseau est en version 2 : mettre à jour l'addon côté client et serveur.
+Le protocole réseau est en version 4 : mettre à jour l'addon côté client et serveur.
 
 ## Étapes suivantes
 

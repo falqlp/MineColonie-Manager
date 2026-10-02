@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_book": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["minecraft:book"] }] }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": { "recipe": "colonyresourceledger:colony_job_monitor" }
+    }
+  },
+  "requirements": [["has_book", "has_the_recipe"]],
+  "rewards": { "recipes": ["colonyresourceledger:colony_job_monitor"] }
+}

@@ -60,6 +60,32 @@ tasks.register('verifyLedgerPayload', JavaExec) {
 tasks.named('check') {
     dependsOn tasks.named('verifySupplyPlanner'), tasks.named('verifyLedgerPayload')
 }
+tasks.register('verifyJobHistory', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.leopaul.colonyledger.service.JobHistoryTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+}
+tasks.register('verifyJobPayload', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.leopaul.colonyledger.network.JobMonitorPayloadTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+}
+tasks.named('check') { dependsOn tasks.named('verifyJobHistory'), tasks.named('verifyJobPayload') }
+tasks.register('verifyHousingServices', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.leopaul.colonyledger.service.HousingServicesTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+}
+tasks.register('verifyHousingPayload', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.leopaul.colonyledger.network.HousingPayloadTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+}
+tasks.named('check') { dependsOn tasks.named('verifyHousingServices'), tasks.named('verifyHousingPayload') }
 
 neoForge {
     // Specify the version of NeoForge to use.
