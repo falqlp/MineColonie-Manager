@@ -160,6 +160,10 @@ $env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.1.12-hotspot'
 L'artefact est généré dans `build/libs/`.
 
 `build` exécute aussi les tests du plan d'approvisionnement, des historiques et des paquets réseau.
+Le groupe de sources `test` reçoit explicitement les dépendances Minecraft,
+NeoForge et leurs bibliothèques via `neoForge.addModdingDependenciesTo(sourceSets.test)`.
+Elles sont nécessaires à la compilation **et** à l'exécution des tests de codecs
+et NBT ; les tests ne sont pas inclus dans le JAR du mod.
 Pour les lancer seuls :
 
 ```powershell

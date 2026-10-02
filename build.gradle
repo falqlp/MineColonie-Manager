@@ -91,6 +91,10 @@ neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
 
+    // ModDev configures main by default, but test also references Minecraft/Netty.
+    // Add the generated game artifact and its libraries to test compile AND runtime.
+    addModdingDependenciesTo(sourceSets.test)
+
     parchment {
         mappingsVersion = project.parchment_mappings_version
         minecraftVersion = project.parchment_minecraft_version
