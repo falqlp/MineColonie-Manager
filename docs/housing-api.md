@@ -196,5 +196,5 @@ Un échange manuel peut séparer des partenaires : la confirmation le signale.
 `verifyHousingServices` couvre distances, seuils, exclusions, capacités, conservation
 du plafond, paires indépendantes, limite de taille et restauration après échec.
 `verifyHousingPayload` couvre les trois codecs, statuts, positions nulles et données
-vides. Les six suites de l'addon sont reliées à `check`.
+vides. Les suites de l'addon sont reliées à `check`.
 Ces tests de service/codecs ne remplacent pas les vérifications en jeu ci-dessus.

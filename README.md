@@ -55,8 +55,11 @@ et réutilise les surplus prévus d'un lot. Il réserve virtuellement les stocks
 blocs finis pour tous les builders avant de les utiliser comme ingrédients.
 Les stocks des entrepôts, des racks d'ateliers et de leurs travailleurs sont
 affectés une seule fois. « Stock affecté » désigne cette affectation **dans le calcul**,
-pas une réservation réelle dans MineColonies. Les intermédiaires déjà en stock
-peuvent apparaître en vert ; la quantité rouge indique ce qui reste à apporter.
+pas une réservation réelle dans MineColonies. L'onglet « À fournir » masque les
+lignes dont la quantité manquante vaut zéro : seuls les besoins restants sont
+affichés. Les affectations de stock restent utilisées dans le calcul, même si
+leur ligne n'est plus affichée. L'onglet « Besoins builders » conserve les besoins
+déjà couverts pour suivre les chantiers.
 Survolez une ligne pour voir l'atelier et le produit concernés.
 
 Limites : choix stable du premier atelier et de sa première recette correspondante,
@@ -75,7 +78,7 @@ Le nouvel objet **Suivi des colons** se fabrique avec **1 livre + 1 montre**, sa
 ordre imposé. Un clic droit ouvre le panneau de la colonie accessible la plus proche.
 Pour tester en créatif : `/give @s colonyresourceledger:colony_job_monitor`.
 
-Chaque ligne affiche le métier actuel, le JobStatus actuel, et le pourcentage de
+Chaque ligne affiche le métier actuel, l'activité estimée actuelle, et le pourcentage de
 temps observé dans `IDLE` (inactif), `WORKING` (travaille) et `STUCK` (bloqué).
 Une barre colorée représente les mêmes pourcentages. Recherche par nom ou métier,
 défilement et boutons de pagination permettent de consulter toute la colonie.
@@ -95,10 +98,21 @@ temps **réellement observé**, pas sur toute la durée sélectionnée. Une info
 indique ce temps, en jours Minecraft ; sans observation les pourcentages sont « — ».
 Les pourcentages arrondis à une décimale totalisent 100,0 %.
 
-L'historique suit le colon même s'il change de métier. JobStatus est l'état natif
-MineColonies, pas une mesure de rendement : un colon qui dort peut conserver son
-dernier JobStatus, et `STUCK` ne révèle pas la cause du blocage. Des transitions
-plus rapides que 20 ticks peuvent être manquées.
+L'historique suit le colon même s'il change de métier. Le suivi ne recopie plus
+seulement `JobStatus`, car certains métiers le laissent à `IDLE` en travaillant.
+Il combine l'IA du citoyen et du métier, l'ordre de chantier du builder, la file
+de tâches du livreur et les requêtes de matériel bloquantes. Un livreur sans
+tâche reste inactif même si son indicateur natif dit qu'il travaille ; un livreur
+qui décharge après une livraison compte comme actif. Repas, sommeil, fuite et
+pause comptent comme inactivité, même si l'IA de travail conserve son dernier état.
+Une requête terminée en cours de récupération ne compte pas comme blocage.
+
+Ces états sont une **estimation de l'addon**, pas une mesure de rendement ou de
+chemin bloqué. Pour les états personnalisés inconnus, le statut natif reste le
+repli. Des transitions plus rapides que 20 ticks peuvent être manquées.
+L'historique déjà enregistré n'est ni effacé ni corrigé rétroactivement : la
+nouvelle classification s'applique aux observations futures, et les fenêtres
+glissantes se renouvellent progressivement. Voir [docs/job-activity.md](docs/job-activity.md).
 
 Le suivi fonctionne même si le panneau est fermé. Il est sauvegardé par dimension
 dans `data/colonyresourceledger_job_history.dat`, avec des identités séparées par
@@ -165,13 +179,13 @@ NeoForge et leurs bibliothèques via `neoForge.addModdingDependenciesTo(sourceSe
 Elles sont nécessaires à la compilation **et** à l'exécution des tests de codecs
 et NBT ; les tests ne sont pas inclus dans le JAR du mod.
 Ces suites sont des programmes Java `main`, pas des tests JUnit. La tâche `test`
-exécute les six tâches `verify…` et autorise l'absence de tests JUnit découverts
+exécute les sept tâches `verify…` et autorise l'absence de tests JUnit découverts
 (`failOnNoDiscoveredTests = false`, nécessaire avec Gradle 9). Les erreurs des
 vérifications font toujours échouer `test`, `check` et `build`.
 Pour les lancer seuls :
 
 ```powershell
-.\gradlew.bat verifySupplyPlanner verifyLedgerPayload verifyJobHistory verifyJobPayload verifyHousingServices verifyHousingPayload
+.\gradlew.bat verifySupplyPlanner verifyLedgerPayload verifyJobHistory verifyJobPayload verifyHousingServices verifyHousingPayload verifyJobActivity
 ```
 
 Le protocole réseau est en version 4 : mettre à jour l'addon côté client et serveur.

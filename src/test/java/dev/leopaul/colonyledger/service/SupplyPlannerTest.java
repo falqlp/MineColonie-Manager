@@ -2,6 +2,7 @@ package dev.leopaul.colonyledger.service;
 
 import java.util.*;
 import dev.leopaul.colonyledger.service.SupplyPlanner.*;
+import dev.leopaul.colonyledger.model.SupplyRequirement;
 
 /** Dependency-free regression checks, also executable with Java 21 directly. */
 public final class SupplyPlannerTest {
@@ -15,6 +16,7 @@ public final class SupplyPlannerTest {
         sharesStockAndBatchSurplus();
         noMissingBlocksNeedsNoMaterials();
         usesIntermediateStockBeforeCrafting();
+        supplyViewOnlyShowsPositiveShortages();
         cyclesAndDeepChainsAreBounded();
         largeQuantitiesDoNotOverflow();
         System.out.println("SupplyPlanner: " + checks + " regression checks passed.");
@@ -117,6 +119,16 @@ public final class SupplyPlannerTest {
         Result<String> limited = plan(Map.of(), deep, demand("item0", 1));
         equal(true, limited.limited());
         equal(1, limited.materials().size());
+    }
+
+    private static void supplyViewOnlyShowsPositiveShortages() {
+        List<SupplyRequirement> rows = List.of(
+                new SupplyRequirement("planks", "Planks", 6, 6, 0, List.of("Workshop")),
+                new SupplyRequirement("log", "Log", 3, 1, 2, List.of("Workshop")),
+                new SupplyRequirement("stone", "Stone", 1, 2, -1, List.of("Builder")));
+        equal(List.of("log"), rows.stream().filter(SupplyRequirement::needsSupply).map(SupplyRequirement::itemId).toList());
+        equal(0L, rows.stream().limit(1).filter(SupplyRequirement::needsSupply).count());
+        equal(6, rows.get(0).allocatedStock()); // Presentation does not discard allocation data.
     }
 
     private static void largeQuantitiesDoNotOverflow() {

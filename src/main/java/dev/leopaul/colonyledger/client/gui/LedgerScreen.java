@@ -1,6 +1,7 @@
 package dev.leopaul.colonyledger.client.gui;
 
 import dev.leopaul.colonyledger.model.ColonyResourceSummary;
+import dev.leopaul.colonyledger.model.SupplyRequirement;
 import dev.leopaul.colonyledger.network.RequestLedgerPayload;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -127,7 +128,7 @@ public final class LedgerScreen extends Screen {
         String query = search == null ? "" : search.getValue().toLowerCase(Locale.ROOT);
         List<DisplayRow> rows;
         if (view == View.SUPPLY) {
-            rows = summary.supplyRequirements().stream().map(r -> new DisplayRow(r.itemId(), r.displayName(),
+            rows = summary.supplyRequirements().stream().filter(SupplyRequirement::needsSupply).map(r -> new DisplayRow(r.itemId(), r.displayName(),
                     r.missing(), 0, Component.translatable("screen.colonyresourceledger.supply_row",
                     r.requiredTotal(), r.allocatedStock()), String.join(", ", r.usedBy()))).toList();
         } else {

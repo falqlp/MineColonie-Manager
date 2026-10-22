@@ -35,7 +35,7 @@ public final class JobStatusTracker {
         return colony.isActive() && citizen.getEntity().filter(entity -> entity.isAlive() && !entity.isRemoved()).isPresent();
     }
     private static ObservedJobStatus status(ICitizenData citizen) {
-        return ObservedJobStatus.valueOf(citizen.getJobStatus().name());
+        return JobActivityAdapter.status(citizen);
     }
 
     public static JobMonitorSummary snapshot(ServerPlayer player, int requestedColony, JobPeriod period) {
